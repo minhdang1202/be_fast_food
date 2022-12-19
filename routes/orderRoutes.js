@@ -43,10 +43,19 @@ router.post("/", protect, async (req, res) => {
 });
 
 router.get("/", protect, async (req, res) => {
-  try {
-    const order = await Order.find({ user: req.user._id }).sort({ _id: -1 });
+  const { pageSize, page } = req.query;
 
-    res.status(200).json(order);
+  try {
+    const orders = await Order.find({ user: req.user._id })
+      .sort({ _id: -1 })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1));
+
+    const order = await await Order.find({ user: req.user._id }).sort({
+      _id: -1,
+    });
+
+    res.status(200).json({ orders, total: order.length });
   } catch (error) {
     res.status(500).json(error.message);
   }
@@ -54,11 +63,27 @@ router.get("/", protect, async (req, res) => {
 
 router.get("/all", protect, admin, async (req, res) => {
   try {
-    const order = await Order.find({})
+    const { pageSize, page, filter } = req.query;
+    const total = await Order.countDocuments(
+      Number(filter) !== -1 ? { status: Number(filter) } : {}
+    );
+
+    const orders = await Order.find();
+    let totalSale = 0;
+
+    orders?.map((order) =>
+      order.isPaid === true ? (totalSale = totalSale + order.totalAmount) : null
+    );
+
+    const order = await Order.find(
+      Number(filter) !== -1 ? { status: Number(filter) } : {}
+    )
       .sort({ _id: -1 })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1))
       .populate("user", "id name email ");
 
-    res.status(200).json(order);
+    res.status(200).json({ order, total, totalSale });
   } catch (error) {
     res.status(500).json(error.message);
   }
@@ -79,26 +104,22 @@ router.get("/all/filter", protect, async (req, res) => {
 
   //0- Get all; 1- Process; 2- Received; 3- Completed; 4- Cancelled
   const status = req.query.status;
-  let filterOrder = [];
   try {
-    const order = await Order.find()
+    const order = await Order.find(
+      Number(status) === 0
+        ? { status: Number(status) }
+        : {
+            status: Number(status),
+            shipper: req.user._id,
+          }
+    )
       .sort({ _id: -1 })
       .populate("user", "id name email ");
-    if (Number(status) === 0) {
-      filterOrder = order
-        .filter((o) => o.status >= 0)
-        .filter((o) => lastTime(day, o.createdAt));
-    } else {
-      Number(status) === 2
-        ? (filterOrder = order
-            .filter((o) => o?.shipper?.equals(req.user._id))
-            .filter((o) => lastTime(day, o.createdAt)))
-        : (filterOrder = order
-            .filter((o) => o.shipper === req.user._id)
-            .filter((o) => o.status === Number(status))
-            .filter((o) => lastTime(day, o.createdAt)));
-    }
-    res.status(200).json(filterOrder);
+
+    res.status(200).json({
+      orders: order.filter((o) => lastTime(day, o.createdAt)),
+      total: order.length,
+    });
   } catch (error) {
     res.status(500).json(error.message);
   }

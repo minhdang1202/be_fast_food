@@ -80,7 +80,6 @@ router.get("/profile", protect, async (req, res) => {
 router.put("/profile", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    console.log(user);
     if (user) {
       user.name = req.body.name || user.name;
       user.phone = req.body.phone || user.phone;

@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { protect } = require("../middleware/authMiddleware");
 const Product = require("../models/ProductModel");
+const { cloudinary } = require("../config/cloudinary");
 
 router.get("/", async (req, res) => {
   try {
@@ -72,24 +73,31 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
+    const { name, description, price, category, images, ingredients } =
+      req.body;
     const nameExists = await Product.findOne({ name });
     if (nameExists) {
       res.status(400).json("Product already exists");
     } else {
-      const newProduct = new Product({
-        name,
-        // image,
-        description,
-        // rating,
-        // numReview,
-        price,
-        // reviews,
-        category,
-      });
-      const product = await newProduct.save();
+      const list = await Promise.all(
+        images.map(async (image) => {
+          const uploadedImage = await cloudinary.uploader.upload(image, {
+            upload_preset: "fast-food",
+          });
+          return uploadedImage.secure_url;
+        })
+      );
 
-      res.status(200).json(product);
+      const newProduct = await Product.create({
+        name,
+        description,
+        price,
+        category,
+        images: list,
+        ingredients,
+      });
+
+      res.status(201).json(newProduct);
     }
   } catch (e) {
     res.status(500).json(e.message);

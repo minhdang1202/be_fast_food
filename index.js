@@ -11,6 +11,7 @@ const cors = require("cors");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { Server } = require("socket.io");
 const http = require("http");
+var bodyParser = require("body-parser");
 
 const corsOptions = {
   origin: "*",
@@ -33,13 +34,22 @@ app.get("/", (req, res) => {
   res.send("API IS WORKING");
 });
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb" }));
 app.use(cors(corsOptions));
 
 app.use("/api/user", userRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/cart", cartItemRoutes);
 app.use("/api/orders", orderRoutes);
+
+// app.post('api/upload', (req,res) => {
+//   try {
+//     const
+//   } catch (error) {
+//     console.log(error)
+//   }
+// })
 
 // let users = [];
 // const addUser = (user, socketId) => {
