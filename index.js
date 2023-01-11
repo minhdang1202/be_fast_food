@@ -6,6 +6,7 @@ const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const cartItemRoutes = require("./routes/cartItemRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const ingRoutes = require("./routes/ingRoutes");
 
 const cors = require("cors");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
@@ -42,6 +43,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/cart", cartItemRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/ings", ingRoutes);
 
 // app.post('api/upload', (req,res) => {
 //   try {
